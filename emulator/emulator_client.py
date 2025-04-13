@@ -57,7 +57,6 @@ class MQTTClient:
         # self.client.subscribe(topic, 0, self.customOnMessage)
         self.client.subscribeAsync(topic, 0, ackCallback=self.customSubackCallback)
 
-
     def publish(self, topic="vehicle/emission/data/{}"):
         try:
             formatted_topic = topic.format(self.device_id)
@@ -106,6 +105,60 @@ class MQTTClient:
         except Exception as e:
             print(f"Error publishing data for device {self.device_id}: {e}")
 
+    def publishAll(self, topic="vehicle/emission/data/{}"):
+        try:
+            formatted_topic = topic.format(self.device_id)
+            # Load the vehicle's emission data
+            df = pd.read_csv(data_path.format(self.device_id))
+
+            # Start from the current state and publish all remaining rows
+            start_index = self.state
+            if start_index >= len(df):
+                print(f"All data for device {self.device_id} has already been published.")
+                return
+
+            # Publish all remaining rows
+            for i in range(start_index, len(df)):
+                row = df.iloc[i]
+                print(
+                    f">>> Device {self.device_id} publishing row {i + 1}/{len(df)}: [{row['vehicle_CO2']}, {row['vehicle_speed']}]")
+
+                # Create JSON payload
+                payload = {
+                    "device_id": self.device_id,
+                    "timestep_time": row.get('timestep_time', 0),
+                    "timestamp": time.time(),
+                    "vehicle_id": row.get('vehicle_id', 0),
+                    "vehicle_CO": row.get('vehicle_CO', 0),
+                    "vehicle_CO2": row.get('vehicle_CO2', 0),
+                    "vehicle_HC": row.get('vehicle_HC', 0),
+                    "vehicle_NOx": row.get('vehicle_NOx', 0),
+                    "vehicle_PMx": row.get('vehicle_PMx', 0),
+                    "vehicle_speed": row.get('vehicle_speed', 0),
+                    "vehicle_noise": row.get('vehicle_noise', 0),
+                    "vehicle_fuel": row.get('vehicle_fuel', 0),
+                    "vehicle_x": row.get('vehicle_x', 0),
+                    "vehicle_y": row.get('vehicle_y', 0)
+                }
+
+                # Publish the payload
+                print(f"Device {self.device_id} - Publishing to {formatted_topic}")
+                self.client.publishAsync(
+                    formatted_topic,
+                    json.dumps(payload),
+                    0,
+                    ackCallback=self.customPubackCallback
+                )
+
+                # Sleep to simulate real-time data
+                time.sleep(0.5)  # 500ms delay between messages
+
+            # Update state to indicate we've published all rows
+            self.state = len(df)
+            print(f"Published all remaining data for device {self.device_id}")
+        except Exception as e:
+            print(f"Error publishing data for device {self.device_id}: {e}")
+
 
 print("Loading vehicle data...")
 data = []
@@ -140,6 +193,7 @@ print(f"Successfully initialized {len(clients)} devices")
 while True:
     print("\nOptions:")
     print("  's' to send data from all devices")
+    print("  'a' to send all data from all devices")
     print("  'd' to disconnect all devices and exit")
     print("  'q' to exit without disconnecting")
 
@@ -149,6 +203,10 @@ while True:
         print(f"Sending data from {len(clients)} devices...")
         for c in clients:
             c.publish()
+    elif x == "a":
+        print(f"Sending all data from {len(clients)} devices...")
+        for c in clients:
+            c.publishAll()
     elif x == "d":
         for c in clients:
             c.client.disconnect()
