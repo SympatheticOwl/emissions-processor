@@ -1,0 +1,44 @@
+{
+    "RecipeFormatVersion": "2020-01-25",
+    "ComponentName": "com.emission.processor",
+    "ComponentVersion": "1.0.4",
+    "ComponentType": "aws.greengrass.generic",
+    "ComponentDescription": "Processes vehicle emission data and tracks maximum CO2 values",
+    "ComponentPublisher": "ldamler2",
+    "ComponentConfiguration": {
+        "DefaultConfiguration": {
+            "accessControl": {
+                "aws.greengrass.ipc.mqttproxy": {
+                    "com.example.EmissionProcessor:mqttproxy:1": {
+                        "policyDescription": "Allows access to publish and subscribe to MQTT topics",
+                        "operations": [
+                            "aws.greengrass#PublishToIoTCore",
+                            "aws.greengrass#SubscribeToIoTCore"
+                        ],
+                        "resources": [
+                            "vehicle/emission/data/*",
+                            "vehicle/emission/analysis/*"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "Manifests": [
+        {
+            "Platform": {
+                "os": "linux"
+            },
+            "Lifecycle": {
+                "Run": "python3 {artifacts:decompressedPath}/emission_processor/process_emission.py"
+            },
+            "Artifacts": [
+                {
+                    "Uri": "s3://${ARTIFACT_BUCKET}/artifacts/com.emission.processor/1.0.4/emission_processor.zip",
+                    "Unarchive": "ZIP"
+                }
+            ]
+        }
+    ],
+    "Lifecycle": {}
+}

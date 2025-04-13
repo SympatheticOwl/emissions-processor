@@ -1,0 +1,29 @@
+{
+  "targetArn": "arn:aws:iot:us-east-2:${AWS_ACCOUNT_ID}:thinggroup/thing_group",
+  "deploymentName": "EmissionProcessorWithFirehoseDeployment",
+  "components": {
+    "com.emission.processor": {
+      "componentVersion": "1.0.4"
+    },
+    "com.emission.firehose": {
+      "componentVersion": "1.0.10"
+    },
+    "aws.greengrass.Cli": {
+      "componentVersion": "2.14.2"
+    },
+    "aws.greengrass.Nucleus": {
+      "componentVersion": "2.14.2"
+    }
+  },
+  "deploymentPolicies": {
+    "failureHandlingPolicy": "ROLLBACK",
+    "componentUpdatePolicy": {
+      "timeoutInSeconds": 60,
+      "action": "NOTIFY_COMPONENTS"
+    },
+    "configurationValidationPolicy": {
+      "timeoutInSeconds": 60
+    }
+  },
+  "iotJobConfiguration": {}
+}

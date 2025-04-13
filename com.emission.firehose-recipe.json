@@ -1,0 +1,69 @@
+{
+    "RecipeFormatVersion": "2020-01-25",
+    "ComponentName": "com.emission.firehose",
+    "ComponentVersion": "1.0.10",
+    "ComponentType": "aws.greengrass.generic",
+    "ComponentDescription": "Publishes emission data to Amazon Kinesis Firehose",
+    "ComponentPublisher": "ldamler2",
+    "ComponentConfiguration": {
+        "DefaultConfiguration": {
+            "accessControl": {
+                "aws.greengrass.ipc.mqttproxy": {
+                    "com.emission.firehose:mqttproxy:1": {
+                        "policyDescription": "Allows access to subscribe to MQTT topics",
+                        "operations": [
+                            "aws.greengrass#SubscribeToIoTCore"
+                        ],
+                        "resources": [
+                            "vehicle/emission/analysis/#"
+                        ]
+                    }
+                },
+                "aws.greengrass.TokenExchangeService": {
+                    "com.emission.firehose:TokenExchangeService:1": {
+                        "policyDescription": "Allows access to the token exchange service",
+                        "operations": [
+                            "aws.greengrass#GetToken"
+                        ],
+                        "resources": [
+                            "*"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "ComponentDependencies": {
+        "com.emission.processor": {
+            "VersionRequirement": ">=1.0.2",
+            "DependencyType": "SOFT"
+        },
+        "aws.greengrass.TokenExchangeService": {
+            "VersionRequirement": ">=2.0.0 <3.0.0",
+            "DependencyType": "HARD"
+        }
+    },
+    "Manifests": [
+        {
+            "Platform": {
+                "os": "linux"
+            },
+            "Lifecycle": {
+                "Run": "python3 {artifacts:decompressedPath}/firehose/firehose.py",
+                "RequiresPrivilege": false,
+                "Environment": {
+                    "AWS_ACCESS_KEY_ID": "${AWS_ACCESS_KEY_ID}",
+                    "AWS_SECRET_ACCESS_KEY": "${AWS_SECRET_ACCESS_KEY}",
+                    "AWS_REGION": "us-east-2"
+                }
+            },
+            "Artifacts": [
+                {
+                    "Uri": "s3://${ARTIFACT_BUCKET}/artifacts/com.emission.firehose/1.0.10/firehose.zip",
+                    "Unarchive": "ZIP"
+                }
+            ]
+        }
+    ],
+    "Lifecycle": {}
+}
